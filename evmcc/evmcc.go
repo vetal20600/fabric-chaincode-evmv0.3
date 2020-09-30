@@ -25,7 +25,8 @@ import (
 )
 
 //Permissions for all accounts (users & contracts) to send CallTx or SendTx to a contract
-const ContractPermFlags = permission.Call | permission.Send | permission.CreateContract
+const ContractPermFlags = permission.Call | permission.Send | permission.CreateAccount | permission.CreateContract | permission.Bond |
+	permission.Name | permission.HasBase | permission.HasRole | permission.Proposal | permission.Input | permission.Batch
 
 var ContractPerms = permission.AccountPermissions{
 	Base: permission.BasePermissions{

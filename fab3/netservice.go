@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-const NetworkID = "fabevm"
+const NetworkID = "291"
 
 // NetService returns data about the network the client is connected
 // to.
