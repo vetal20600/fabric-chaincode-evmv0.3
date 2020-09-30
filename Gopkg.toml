@@ -6,7 +6,7 @@ noverify = [
 ]
 
 [[constraint]]
-  version = "0.24.4"
+  branch = "v0.24.4m"
   name = "github.com/vetal20600/burrow"
 
 [[constraint]]
