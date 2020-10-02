@@ -6,8 +6,8 @@ noverify = [
 ]
 
 [[constraint]]
-  branch = "v0.24.4m"
-  name = "github.com/vetal20600/burrow"
+  version = "0.24.4"
+  name = "github.com/hyperledger/burrow"
 
 [[constraint]]
   version = "1.4.0"

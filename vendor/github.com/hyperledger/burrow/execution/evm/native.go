@@ -19,8 +19,10 @@ import (
 
 	. "github.com/hyperledger/burrow/binary"
 	"github.com/hyperledger/burrow/crypto"
+	"github.com/hyperledger/burrow/crypto/sha3"
 	"github.com/hyperledger/burrow/execution/errors"
 	"github.com/hyperledger/burrow/logging"
+	"github.com/hyperledger/burrow/secp256k1"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -46,7 +48,7 @@ func init() {
 }
 
 func registerNativeContracts() {
-	// registeredNativeContracts[Int64ToWord256(1)] = ecrecoverFunc
+	registeredNativeContracts[crypto.Address{1}] = ecrecoverFunc
 	registeredNativeContracts[crypto.Address{2}] = sha256Func
 	registeredNativeContracts[crypto.Address{3}] = ripemd160Func
 	registeredNativeContracts[crypto.Address{4}] = identityFunc
@@ -95,6 +97,29 @@ OH NO STOCASTIC CAT CODING!!!!
 	return LeftPadBytes(hashed, 32), nil
 }
 */
+
+func ecrecoverFunc(state Interface, caller crypto.Address, input []byte, gas *uint64,
+	logger *logging.Logger) (output []byte, err error) {
+	// Deduct gas
+	gasRequired := GasEcRecover
+	if *gas < gasRequired {
+		return nil, errors.ErrorCodeInsufficientGas
+	} else {
+		*gas -= gasRequired
+	}
+
+	// SECP256K1 Recovery
+	hash := input[:32]
+	v := byte(input[32] - 27) // ignore input[33:64], v is small.
+	sig := append(input[64:], v)
+
+	recovered, err := secp256k1.RecoverPubkey(hash, sig)
+	if err != nil {
+		return nil, err
+	}
+	hashed := sha3.Sha3(recovered[1:])
+	return LeftPadBytes(hashed, 32), nil
+}
 
 func sha256Func(state Interface, caller crypto.Address, input []byte, gas *uint64,
 	logger *logging.Logger) (output []byte, err error) {
