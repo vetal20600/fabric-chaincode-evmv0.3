@@ -17,12 +17,13 @@ package evm
 import (
 	"crypto/sha256"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v3"
+	"github.com/decred/dcrd/dcrec/secp256k1/v3/ecdsa"
 	. "github.com/hyperledger/burrow/binary"
 	"github.com/hyperledger/burrow/crypto"
 	"github.com/hyperledger/burrow/crypto/sha3"
 	"github.com/hyperledger/burrow/execution/errors"
 	"github.com/hyperledger/burrow/logging"
-	"github.com/hyperledger/burrow/secp256k1"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -74,32 +75,9 @@ func ExecuteNativeContract(address crypto.Address, st Interface, caller crypto.A
 type NativeContract func(state Interface, caller crypto.Address, input []byte, gas *uint64,
 	logger *logging.Logger) (output []byte, err error)
 
-/* Removed due to C dependency
-func ecrecoverFunc(state State, caller crypto.Address, input []byte, gas *int64) (output []byte, err error) {
-	// Deduct gas
-	gasRequired := GasEcRecover
-	if *gas < gasRequired {
-		return nil, ErrInsufficientGas
-	} else {
-		*gas -= gasRequired
-	}
-	// Recover
-	hash := input[:32]
-	v := byte(input[32] - 27) // ignore input[33:64], v is small.
-	sig := append(input[64:], v)
-
-	recovered, err := secp256k1.RecoverPubkey(hash, sig)
-	if err != nil {
-		return nil, err
-OH NO STOCASTIC CAT CODING!!!!
-	}
-	hashed := sha3.Sha3(recovered[1:])
-	return LeftPadBytes(hashed, 32), nil
-}
-*/
-
 func ecrecoverFunc(state Interface, caller crypto.Address, input []byte, gas *uint64,
 	logger *logging.Logger) (output []byte, err error) {
+	isCompressed := true
 	// Deduct gas
 	gasRequired := GasEcRecover
 	if *gas < gasRequired {
@@ -113,11 +91,18 @@ func ecrecoverFunc(state Interface, caller crypto.Address, input []byte, gas *ui
 	v := byte(input[32] - 27) // ignore input[33:64], v is small.
 	sig := append(input[64:], v)
 
-	recovered, err := secp256k1.RecoverPubkey(hash, sig)
+	publicKey, wasCompressed, err := RecoverCompact(sig, hash)
 	if err != nil {
 		return nil, err
 	}
-	hashed := sha3.Sha3(recovered[1:])
+
+	var serializedPublicKey []byte
+	if wasCompressed == isCompressed {
+		serializedPublicKey = publicKey.SerializeCompressed()
+	} else {
+		serializedPublicKey = publicKey.SerializeUncompressed()
+	}
+	hashed := sha3.Sha3(serializedPublicKey[1:])
 	return LeftPadBytes(hashed, 32), nil
 }
 
